@@ -1,8 +1,3 @@
-// Package bls implements the compact BLS Multisignature construction which preappends the public key to the signature
-// according to the *plain public-key model*.
-// The form implemented uses an array of distinct keys (as in https://crypto.stanford.edu/~dabo/pubs/papers/BLSmultisig.html)
-// instead of the aggregated form (as in https://eprint.iacr.org/2018/483.pdf where {pk₁,...,pkₙ} would be appended to each pkᵢ
-//according to apk ← ∏ⁿᵢ₌₁ pk^H₁(pkᵢ, {pk₁,...,pkₙ})
 package bls
 
 import (
@@ -11,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto"
 	"io"
 	"math/big"
 
@@ -589,4 +585,18 @@ func decodeText(data []byte) ([]byte, error) {
 	buf := make([]byte, base64.RawURLEncoding.DecodedLen(len(data)))
 	n, err := base64.RawURLEncoding.Decode(buf, data)
 	return buf[:n], err
+}
+
+func PrivateToPublic(privateKeyBytes []byte) ([]byte, error) {
+	key, err := crypto.ToECDSA(privateKeyBytes)
+	if err != nil {
+		return nil, err
+	}
+	gx := new(bn256.G2).ScalarBaseMult(key.D)
+	pk := PublicKey{gx}
+	return pk.Marshal(), nil
+}
+
+func NewKey(x *big.Int) SecretKey {
+	return SecretKey{x}
 }
